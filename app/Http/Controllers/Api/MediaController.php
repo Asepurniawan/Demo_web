@@ -10,15 +10,23 @@ use App\Models\Media;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Request;
 
 class MediaController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index(): AnonymousResourceCollection
+    public function index(Request $request): AnonymousResourceCollection
     {
-        return MediaResource::collection(Media::with('users')->paginate(15));
+        $media = Media::query()
+            ->with('users')
+            ->when($request->filled('q'), function ($query) use ($request) {
+                $query->where('title', 'like', '%' . $request->string('q')->toString() . '%');
+            })
+            ->paginate(15);
+
+        return MediaResource::collection($media);
     }
 
     /**
